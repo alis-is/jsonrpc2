@@ -43,6 +43,15 @@ func Request[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context
 	}
 }
 
+func RequestTo[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c IEndpointClient, method string, params TParams, result *rpc.Response[TResult]) error {
+	response, err := Request[TParams, TResult](ctx, c, method, params)
+	if err != nil {
+		return err
+	}
+	*result = *response
+	return nil
+}
+
 // notify
 func Notify[TParams rpc.ParamsType](ctx context.Context, c IEndpointClient, method string, params TParams) error {
 	if c.IsClosed() {
@@ -108,4 +117,13 @@ func Batch[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, 
 		}
 	}
 	return results, nil
+}
+
+func BatchTo[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c IEndpointClient, requests []RequestInfo[TParams], results []*rpc.Response[TResult]) error {
+	r, err := Batch[TParams, TResult](ctx, c, requests)
+	if err != nil {
+		return err
+	}
+	copy(results, r)
+	return nil
 }

@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.8.1
+	golang.org/x/net v0.7.0
 )
 
 require (

@@ -12,9 +12,8 @@ import (
 )
 
 func writeJsonResponse(w http.ResponseWriter, response []byte, statusCode int) {
-	w.Write(response)
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
+	w.Write(response)
 }
 
 type EndpointRegistry map[string]RpcMethodRegistry

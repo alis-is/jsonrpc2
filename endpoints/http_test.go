@@ -118,7 +118,7 @@ func TestHttpBatchRequest(t *testing.T) {
 	})
 	go s.ListenAndServe()
 	defer s.Close()
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 	rs, e := Batch[string, string](context.Background(), c1, []RequestInfo[string]{
 		{"hello", "World", false},
 		{"bye", "World", false},
