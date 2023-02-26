@@ -184,6 +184,8 @@ func TestSendServerResponse(t *testing.T) {
 	go s.ListenAndServe()
 	defer s.Close()
 
+	time.Sleep(2 * time.Second)
+
 	c1.WriteObject(rpc.NewSuccessResponse("test", "test data"))
 	assert.Contains(<-testLogger.LogChannel(), "ignoring response")
 	c1.WriteObject(rpc.NewUnknownError().ToResponse("test"))

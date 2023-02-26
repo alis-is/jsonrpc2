@@ -56,8 +56,8 @@ func TestStreamcloseWithCause(t *testing.T) {
 	testLogger := test.NewLogger()
 	c.UseLogger(testLogger)
 	c.close(fmt.Errorf("testCause"))
-	assert.Contains(testLogger.LastLog(), "stream closing, reason")
-	assert.Contains(testLogger.LastLog(), "testCause")
+	assert.Contains(testLogger.Collected(), "stream closing, reason")
+	assert.Contains(testLogger.Collected(), "testCause")
 }
 
 func TestStreamClosePending(t *testing.T) {
