@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -11,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createHttpServer(mux *ServerMux) *http.Server {
-	srv := &http.Server{Addr: "127.0.0.1:8080"}
+func createHttpServer(mux *ServerMux, port int) *http.Server {
+	srv := &http.Server{Addr: fmt.Sprintf("127.0.0.1:%d", port)}
 	srv.Handler = mux
 	return srv
 }
@@ -79,7 +80,7 @@ func TestHttpRequest(t *testing.T) {
 	assert.NotNil(c2)
 
 	mux := NewServerMux()
-	s := createHttpServer(mux)
+	s := createHttpServer(mux, 8080)
 	RegisterServerMuxEndpointMethod(mux, "/bye", "bye", func(ctx context.Context, name string) (string, *rpc.Error) {
 		return "Bye " + name, nil
 	})
@@ -101,15 +102,16 @@ func TestHttpRequest(t *testing.T) {
 	assert.Equal("Bye World", result)
 }
 
+// TODO: fix this test, timeouts in github
 func TestHttpBatchRequest(t *testing.T) {
 	assert := assert.New(t)
-	c1 := NewHttpClientEndpoint("http://127.0.0.1:8080/hello", nil)
+	c1 := NewHttpClientEndpoint("http://127.0.0.1:8081/hello", nil)
 	assert.NotNil(c1)
-	c2 := NewHttpClientEndpoint("http://127.0.0.1:8080/bye", nil)
+	c2 := NewHttpClientEndpoint("http://127.0.0.1:8081/bye", nil)
 	assert.NotNil(c2)
 
 	mux := NewServerMux()
-	s := createHttpServer(mux)
+	s := createHttpServer(mux, 8081)
 	RegisterServerMuxEndpointMethod(mux, "/", "bye", func(ctx context.Context, name string) (string, *rpc.Error) {
 		return "Bye " + name, nil
 	})
@@ -135,13 +137,13 @@ func TestHttpBatchRequest(t *testing.T) {
 
 func TestHttpNotification(t *testing.T) {
 	assert := assert.New(t)
-	c1 := NewHttpClientEndpoint("http://127.0.0.1:8080/hello", nil)
+	c1 := NewHttpClientEndpoint("http://127.0.0.1:8082/hello", nil)
 	assert.NotNil(c1)
-	c2 := NewHttpClientEndpoint("http://127.0.0.1:8080/bye", nil)
+	c2 := NewHttpClientEndpoint("http://127.0.0.1:8082/bye", nil)
 	assert.NotNil(c2)
 
 	mux := NewServerMux()
-	s := createHttpServer(mux)
+	s := createHttpServer(mux, 8082)
 	signaled := make(chan bool, 1)
 	signaled2 := make(chan bool, 1)
 	RegisterServerMuxEndpointMethod(mux, "/bye", "bye", func(ctx context.Context, name string) (string, *rpc.Error) {
@@ -173,12 +175,12 @@ func TestHttpNotification(t *testing.T) {
 
 func TestSendServerResponse(t *testing.T) {
 	assert := assert.New(t)
-	c1 := NewHttpClientEndpoint("http://127.0.0.1:8080/hello", nil)
+	c1 := NewHttpClientEndpoint("http://127.0.0.1:8083/hello", nil)
 	assert.NotNil(c1)
 	mux := NewServerMux()
 	testLogger := test.NewLogger()
 	mux.UseLogger(testLogger)
-	s := createHttpServer(mux)
+	s := createHttpServer(mux, 8083)
 	go s.ListenAndServe()
 	defer s.Close()
 
