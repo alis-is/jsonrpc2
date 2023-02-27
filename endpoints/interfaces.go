@@ -1,8 +1,6 @@
 package endpoints
 
 import (
-	"fmt"
-
 	"github.com/alis-is/jsonrpc2/rpc"
 )
 
@@ -32,33 +30,20 @@ type ILogger interface {
 type DefaultLogger struct {
 }
 
-func (d *DefaultLogger) log(level string, f string, v ...interface{}) {
-	if f[len(f)-1] != '\n' {
-		f += "\n"
-	}
-	fmt.Printf(level+": "+f, v...)
-}
-
 func (d *DefaultLogger) Tracef(f string, v ...interface{}) {
-	d.log("TRACE", f, v...)
 }
 
 func (d *DefaultLogger) Debugf(f string, v ...interface{}) {
-	d.log("DEBUG", f, v...)
 }
 
 func (d *DefaultLogger) Infof(f string, v ...interface{}) {
-	d.log("INFO", f, v...)
 }
 
 func (d *DefaultLogger) Warnf(f string, v ...interface{}) {
-	d.log("WARN", f, v...)
 }
 
 func (d *DefaultLogger) Errorf(f string, v ...interface{}) {
-	d.log("ERROR", f, v...)
 }
 
 func (d *DefaultLogger) Fatalf(f string, v ...interface{}) {
-	d.log("FATAL", f, v...)
 }
