@@ -37,7 +37,7 @@ func NewHttpClientEndpoint(baseUrl string, client *http.Client) *HttpClientEndpo
 
 func (c *HttpClientEndpoint) UseLogger(logger ILogger) {
 	if logger == nil {
-		c.logger.Debugf("ignored nil logger")
+		c.logger.Tracef("ignored nil logger")
 		return
 	}
 	c.logger = logger
@@ -75,7 +75,7 @@ func (c *HttpClientEndpoint) WriteObject(object interface{}) error {
 	if err != nil {
 		return err
 	}
-	c.logger.Debugf("sending request to %s: %s\n", c.url, string(requestBody))
+	c.logger.Tracef("sending request to %s: %s\n", c.url, string(requestBody))
 	req.Header.Add("Content-Type", "application/json")
 
 	response, err := c.Do(req)
@@ -98,7 +98,7 @@ func (c *HttpClientEndpoint) WriteObject(object interface{}) error {
 
 	var rpcObj rpc.Object
 	err = json.Unmarshal(body, &rpcObj)
-	c.logger.Debugf("jsonrpc2: received message: %s\n", string(body))
+	c.logger.Tracef("jsonrpc2: received message: %s\n", string(body))
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (c *HttpClientEndpoint) WriteObject(object interface{}) error {
 			// this is just shim to allow make common methods callable on http client
 			pendingChannel, ok := c.pending[rpcMsg.Id]
 			if !ok {
-				c.logger.Debugf("jsonrpc2: ignoring response #%s with no corresponding request\n", rpcMsg.Id)
+				c.logger.Tracef("jsonrpc2: ignoring response #%s with no corresponding request\n", rpcMsg.Id)
 				continue
 			}
 			pendingChannel <- rpcMsg

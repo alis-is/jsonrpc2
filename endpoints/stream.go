@@ -65,7 +65,7 @@ func (c *StreamEndpoint) close(cause error) error {
 	}
 
 	if cause != nil && cause != io.EOF && cause != io.ErrUnexpectedEOF {
-		c.logger.Debugf("stream closing, reason: %v\n", cause)
+		c.logger.Tracef("stream closing, reason: %v\n", cause)
 	}
 
 	close(c.closeNotify)
@@ -91,7 +91,7 @@ func (c *StreamEndpoint) ListMethods() []string {
 
 func (c *StreamEndpoint) UseLogger(logger ILogger) {
 	if logger == nil {
-		c.logger.Debugf("ignored nil logger")
+		c.logger.Tracef("ignored nil logger")
 		return
 	}
 	c.logger = logger
@@ -101,16 +101,16 @@ func (c *StreamEndpoint) readMessages(ctx context.Context) {
 	var err error
 	for err == nil {
 		if ctx.Err() != nil {
-			c.logger.Debugf("jsonrpc2: context closed")
+			c.logger.Tracef("jsonrpc2: context closed")
 			break
 		}
 		var rpcObj rpc.Object
 		err = c.stream.ReadObject(&rpcObj)
 		if err != nil {
-			c.logger.Debugf("jsonrpc2: error reading message: %s", err.Error())
+			c.logger.Tracef("jsonrpc2: error reading message: %s", err.Error())
 			break
 		}
-		c.logger.Debugf(fmt.Sprintf("jsonrpc2: received message: %v", rpcObj))
+		c.logger.Tracef(fmt.Sprintf("jsonrpc2: received message: %v", rpcObj))
 		go func() {
 			messages := rpcObj.GetMessages()
 			results := make([]interface{}, 0, len(messages))
@@ -126,13 +126,13 @@ func (c *StreamEndpoint) readMessages(ctx context.Context) {
 				case rpc.ERROR_RESPONSE_KIND:
 					pendingChannel, ok := c.pending[rpcMsg.Id]
 					if !ok {
-						c.logger.Debugf("jsonrpc2: ignoring response #%s with no corresponding request", rpcMsg.Id)
+						c.logger.Tracef("jsonrpc2: ignoring response #%s with no corresponding request", rpcMsg.Id)
 						continue
 					}
 					pendingChannel <- rpcMsg
 				default:
 					// ignore invalid messages to prevent DoS
-					c.logger.Debugf("jsonrpc2: ignoring invalid message: %v", err)
+					c.logger.Tracef("jsonrpc2: ignoring invalid message: %v", err)
 					continue
 				}
 			}
@@ -144,11 +144,11 @@ func (c *StreamEndpoint) readMessages(ctx context.Context) {
 			c.writeMutex.Lock()
 			defer c.writeMutex.Unlock()
 			if rpcObj.IsBatch() {
-				c.logger.Debugf(fmt.Sprintf("jsonrpc2: sending batch response: %v", results))
+				c.logger.Tracef(fmt.Sprintf("jsonrpc2: sending batch response: %v", results))
 				c.stream.WriteObject(results)
 				return
 			}
-			c.logger.Debugf(fmt.Sprintf("jsonrpc2: sending response: %v", results[0]))
+			c.logger.Tracef(fmt.Sprintf("jsonrpc2: sending response: %v", results[0]))
 			c.stream.WriteObject(results[0])
 		}()
 	}
