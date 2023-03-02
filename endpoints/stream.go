@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	ErrStreamClosed = errors.New("stream closed")
+	ErrInvalidEndpoint = errors.New("invalid endpoint")
+	ErrStreamClosed    = errors.New("stream closed")
 )
 
 // StreamEndpoint is a endpoint that implements both client and server side of jsonrpc over a stream.

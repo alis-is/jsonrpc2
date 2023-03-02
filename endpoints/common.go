@@ -9,11 +9,17 @@ import (
 
 // register method to server endpoint
 func RegisterEndpointMethod[TParam rpc.ParamsType, TResult rpc.ResultType](c IEndpointServer, method string, handler RpcMethod[TParam, TResult]) {
+	if c == nil {
+		return
+	}
 	RegisterMethod(c.GetMethods(), method, handler)
 }
 
 // request
 func Request[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c IEndpointClient, method string, params TParams) (*rpc.Response[TResult], error) {
+	if c == nil {
+		return nil, ErrInvalidEndpoint
+	}
 	uuid, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -54,6 +60,9 @@ func RequestTo[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Conte
 
 // notify
 func Notify[TParams rpc.ParamsType](ctx context.Context, c IEndpointClient, method string, params TParams) error {
+	if c == nil {
+		return ErrInvalidEndpoint
+	}
 	if c.IsClosed() {
 		return ErrStreamClosed
 	}
@@ -75,6 +84,9 @@ type RequestInfo[TParams rpc.ParamsType] struct {
 
 // Batch
 func Batch[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c IEndpointClient, requests []RequestInfo[TParams]) ([]*rpc.Response[TResult], error) {
+	if c == nil {
+		return nil, ErrInvalidEndpoint
+	}
 	rpcRequests := make([]*rpc.Request[TParams], 0, len(requests))
 	resultChannels := make([]<-chan rpc.Message, 0, len(requests))
 	for _, request := range requests {
