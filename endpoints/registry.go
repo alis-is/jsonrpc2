@@ -21,7 +21,7 @@ func getMethodHandler(reg RpcMethodRegistry, rpcMsg *rpc.Message) (RpcHandler, *
 	if !rpcMsg.IsRequest() {
 		return nil, rpc.NewInvalidRequestWithData(rpc.ErrInternalNotRequest.Error()).ToResponse(rpcMsg.Id)
 	}
-	handler, ok := reg[*rpcMsg.Method]
+	handler, ok := reg[rpcMsg.Method]
 	if !ok {
 		return nil, rpc.NewMethodNotFound().ToResponse(rpcMsg.Id)
 	}

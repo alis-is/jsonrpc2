@@ -28,7 +28,7 @@ type StreamEndpoint struct {
 
 	closeNotify chan struct{}
 
-	logger ILogger
+	logger Logger
 	// Set by ConnOpt funcs.
 	methodRegistry RpcMethodRegistry
 }
@@ -60,6 +60,7 @@ func (c *StreamEndpoint) close(cause error) error {
 		return ErrStreamClosed
 	}
 
+	c.closed = true
 	for _, pendingChannel := range c.pending {
 		close(pendingChannel)
 	}
@@ -69,7 +70,6 @@ func (c *StreamEndpoint) close(cause error) error {
 	}
 
 	close(c.closeNotify)
-	c.closed = true
 	return c.stream.Close()
 }
 
@@ -89,7 +89,7 @@ func (c *StreamEndpoint) ListMethods() []string {
 	return methods
 }
 
-func (c *StreamEndpoint) UseLogger(logger ILogger) {
+func (c *StreamEndpoint) UseLogger(logger Logger) {
 	if logger == nil {
 		c.logger.Tracef("ignored nil logger")
 		return

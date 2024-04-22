@@ -33,15 +33,15 @@ type MessageBase struct {
 
 type Message struct {
 	MessageBase
-	Id     interface{}      `json:"id,omitempty"`
-	Method *string          `json:"method,omitempty"`
-	Params *json.RawMessage `json:"params,omitempty"`
-	Result *json.RawMessage `json:"result,omitempty"`
-	Error  *ErrorObj        `json:"error,omitempty"`
+	Id     interface{}     `json:"id,omitempty"`
+	Method string          `json:"method,omitempty"`
+	Params json.RawMessage `json:"params,omitempty"`
+	Result json.RawMessage `json:"result,omitempty"`
+	Error  *ErrorObj       `json:"error,omitempty"`
 }
 
 func (r *Message) IsRequest() bool {
-	return r.Method != nil
+	return r.Method != ""
 }
 
 func (r *Message) IsSuccessResponse() bool {
@@ -75,7 +75,7 @@ func (r *Message) GetKind() (MessageKind, error) {
 		return INVALID_KIND, ErrInternalInvalidMessageStructure
 	}
 	if r.IsRequest() {
-		if r.Method == nil || *r.Method == "" {
+		if r.Method == "" {
 			return INVALID_KIND, ErrInternalMethodRequired
 		}
 		if r.Id == nil {
@@ -104,13 +104,10 @@ func (r *Message) GetKind() (MessageKind, error) {
 }
 
 func MessageToRequest[TParam ParamsType](r *Message) *Request[TParam] {
-	method := ""
-	if r.Method != nil {
-		method = *r.Method
-	}
+	method := r.Method
 	var params TParam
 	if r.Params != nil {
-		err := json.Unmarshal(*r.Params, &params)
+		err := json.Unmarshal(r.Params, &params)
 		if err != nil {
 			return nil
 		}
@@ -130,7 +127,7 @@ func MessageToSuccessResponse[TResult ResultType](rpc *Message) (*SuccessRespons
 	}
 	var result TResult
 	if rpc.Result != nil {
-		err := json.Unmarshal(*rpc.Result, &result)
+		err := json.Unmarshal(rpc.Result, &result)
 		if err != nil {
 			return nil, err
 		}
@@ -171,7 +168,7 @@ func MessageToResponse[TResult ResultType](rpc *Message) (*Response[TResult], er
 	switch kind {
 	case SUCCESS_RESPONSE_KIND:
 		var result TResult
-		err := json.Unmarshal(*rpc.Result, &result)
+		err := json.Unmarshal(rpc.Result, &result)
 		if err != nil {
 			return nil, err
 		}

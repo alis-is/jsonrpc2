@@ -18,7 +18,7 @@ type HttpClientEndpoint struct {
 	pending      map[interface{}]chan rpc.Message
 
 	url    string
-	logger ILogger
+	logger Logger
 }
 
 func NewHttpClientEndpoint(baseUrl string, client *http.Client) *HttpClientEndpoint {
@@ -35,7 +35,7 @@ func NewHttpClientEndpoint(baseUrl string, client *http.Client) *HttpClientEndpo
 	}
 }
 
-func (c *HttpClientEndpoint) UseLogger(logger ILogger) {
+func (c *HttpClientEndpoint) UseLogger(logger Logger) {
 	if logger == nil {
 		c.logger.Tracef("ignored nil logger")
 		return

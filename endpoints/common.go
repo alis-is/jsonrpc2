@@ -8,7 +8,7 @@ import (
 )
 
 // register method to server endpoint
-func RegisterEndpointMethod[TParam rpc.ParamsType, TResult rpc.ResultType](c IEndpointServer, method string, handler RpcMethod[TParam, TResult]) {
+func RegisterEndpointMethod[TParam rpc.ParamsType, TResult rpc.ResultType](c EndpointServer, method string, handler RpcMethod[TParam, TResult]) {
 	if c == nil {
 		return
 	}
@@ -16,7 +16,7 @@ func RegisterEndpointMethod[TParam rpc.ParamsType, TResult rpc.ResultType](c IEn
 }
 
 // request
-func Request[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c IEndpointClient, method string, params TParams) (*rpc.Response[TResult], error) {
+func Request[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c EndpointClient, method string, params TParams) (*rpc.Response[TResult], error) {
 	if c == nil {
 		return nil, ErrInvalidEndpoint
 	}
@@ -49,7 +49,7 @@ func Request[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context
 	}
 }
 
-func RequestTo[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c IEndpointClient, method string, params TParams, result *rpc.Response[TResult]) error {
+func RequestTo[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c EndpointClient, method string, params TParams, result *rpc.Response[TResult]) error {
 	response, err := Request[TParams, TResult](ctx, c, method, params)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func RequestTo[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Conte
 }
 
 // notify
-func Notify[TParams rpc.ParamsType](ctx context.Context, c IEndpointClient, method string, params TParams) error {
+func Notify[TParams rpc.ParamsType](ctx context.Context, c EndpointClient, method string, params TParams) error {
 	if c == nil {
 		return ErrInvalidEndpoint
 	}
@@ -83,7 +83,7 @@ type RequestInfo[TParams rpc.ParamsType] struct {
 }
 
 // Batch
-func Batch[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c IEndpointClient, requests []RequestInfo[TParams]) ([]*rpc.Response[TResult], error) {
+func Batch[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams]) ([]*rpc.Response[TResult], error) {
 	if c == nil {
 		return nil, ErrInvalidEndpoint
 	}
@@ -131,7 +131,7 @@ func Batch[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, 
 	return results, nil
 }
 
-func BatchTo[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c IEndpointClient, requests []RequestInfo[TParams], results []*rpc.Response[TResult]) error {
+func BatchTo[TParams rpc.ParamsType, TResult rpc.ResultType](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams], results []*rpc.Response[TResult]) error {
 	r, err := Batch[TParams, TResult](ctx, c, requests)
 	if err != nil {
 		return err

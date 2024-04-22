@@ -30,7 +30,7 @@ func TestRegisterMethod(t *testing.T) {
 	assert.True(ok)
 	var p json.RawMessage = []byte("\"test\"")
 	r := handler(context.Background(), &rpc.Message{
-		Params: &p,
+		Params: p,
 	})
 	_, ok = r.(*rpc.ErrorResponse)
 	assert.True(ok)

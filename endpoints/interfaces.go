@@ -4,21 +4,21 @@ import (
 	"github.com/alis-is/jsonrpc2/rpc"
 )
 
-type IEndpointClient interface {
+type EndpointClient interface {
 	WriteObject(obj interface{}) error
 	RegisterPendingRequest(id interface{}) <-chan rpc.Message
 	UnregisterPendingRequest(id interface{})
 	Close() error
 	IsClosed() bool
-	UseLogger(logger ILogger)
+	UseLogger(logger Logger)
 }
 
-type IEndpointServer interface {
+type EndpointServer interface {
 	GetMethods() RpcMethodRegistry
-	UseLogger(logger ILogger)
+	UseLogger(logger Logger)
 }
 
-type ILogger interface {
+type Logger interface {
 	Tracef(f string, v ...interface{})
 	Debugf(f string, v ...interface{})
 	Infof(f string, v ...interface{})

@@ -7,7 +7,7 @@ import (
 )
 
 func TestDefaultLogger(t *testing.T) {
-	var logger ILogger = &DefaultLogger{}
+	var logger Logger = &DefaultLogger{}
 	assert.NotPanics(t, func() {
 		logger.Tracef("Trace")
 		logger.Debugf("Debug")

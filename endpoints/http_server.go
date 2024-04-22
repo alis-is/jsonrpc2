@@ -22,7 +22,7 @@ type ServerMux struct {
 	http.ServeMux
 	endpoints EndpointRegistry
 
-	logger ILogger
+	logger Logger
 }
 
 func (mux *ServerMux) RegisterEndpoint(path string) {
@@ -47,7 +47,7 @@ func (mux *ServerMux) GetMethods() RpcMethodRegistry {
 	return mux.endpoints["/"]
 }
 
-func (mux *ServerMux) UseLogger(logger ILogger) {
+func (mux *ServerMux) UseLogger(logger Logger) {
 	if logger == nil {
 		mux.logger.Tracef("ignored nil logger")
 		return
