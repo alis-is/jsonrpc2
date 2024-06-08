@@ -3,8 +3,8 @@ package endpoints
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
+	"log/slog"
 	"sync"
 
 	"github.com/alis-is/jsonrpc2/rpc"
@@ -28,7 +28,7 @@ type StreamEndpoint struct {
 
 	closeNotify chan struct{}
 
-	logger Logger
+	logger *slog.Logger
 	// Set by ConnOpt funcs.
 	methodRegistry RpcMethodRegistry
 }
@@ -39,7 +39,7 @@ func NewStreamEndpoint(ctx context.Context, stream ObjectStream) *StreamEndpoint
 		pending:        make(map[interface{}]chan rpc.Message, 1),
 		closeNotify:    make(chan struct{}),
 		methodRegistry: NewMethodRegistry(),
-		logger:         &DefaultLogger{},
+		logger:         slog.Default(),
 	}
 	go c.readMessages(ctx)
 	return c
@@ -66,7 +66,7 @@ func (c *StreamEndpoint) close(cause error) error {
 	}
 
 	if cause != nil && cause != io.EOF && cause != io.ErrUnexpectedEOF {
-		c.logger.Tracef("stream closing, reason: %v\n", cause)
+		c.logger.Debug("stream closing", "reason", cause)
 	}
 
 	close(c.closeNotify)
@@ -89,9 +89,9 @@ func (c *StreamEndpoint) ListMethods() []string {
 	return methods
 }
 
-func (c *StreamEndpoint) UseLogger(logger Logger) {
+func (c *StreamEndpoint) UseLogger(logger *slog.Logger) {
 	if logger == nil {
-		c.logger.Tracef("ignored nil logger")
+		c.logger.Debug("ignored nil logger")
 		return
 	}
 	c.logger = logger
@@ -101,16 +101,16 @@ func (c *StreamEndpoint) readMessages(ctx context.Context) {
 	var err error
 	for err == nil {
 		if ctx.Err() != nil {
-			c.logger.Tracef("jsonrpc2: context closed")
+			c.logger.Debug("jsonrpc2: context closed")
 			break
 		}
 		var rpcObj rpc.Object
 		err = c.stream.ReadObject(&rpcObj)
 		if err != nil {
-			c.logger.Tracef("jsonrpc2: error reading message: %s", err.Error())
+			c.logger.Debug("jsonrpc2: error reading message", "error", err)
 			break
 		}
-		c.logger.Tracef(fmt.Sprintf("jsonrpc2: received message: %v", rpcObj))
+		c.logger.Debug("jsonrpc2: received message", "message", rpcObj)
 		go func() {
 			messages := rpcObj.GetMessages()
 			results := make([]interface{}, 0, len(messages))
@@ -126,13 +126,12 @@ func (c *StreamEndpoint) readMessages(ctx context.Context) {
 				case rpc.ERROR_RESPONSE_KIND:
 					pendingChannel, ok := c.pending[rpcMsg.Id]
 					if !ok {
-						c.logger.Tracef("jsonrpc2: ignoring response #%s with no corresponding request", rpcMsg.Id)
+						c.logger.Debug("jsonrpc2: ignoring response with no corresponding request", "response_id", rpcMsg.Id)
 						continue
 					}
 					pendingChannel <- rpcMsg
 				default:
-					// ignore invalid messages to prevent DoS
-					c.logger.Tracef("jsonrpc2: ignoring invalid message: %v", err)
+					c.logger.Debug("jsonrpc2: ignoring invalid message", "kind", kind, "error", err)
 					continue
 				}
 			}
@@ -144,11 +143,11 @@ func (c *StreamEndpoint) readMessages(ctx context.Context) {
 			c.writeMutex.Lock()
 			defer c.writeMutex.Unlock()
 			if rpcObj.IsBatch() {
-				c.logger.Tracef(fmt.Sprintf("jsonrpc2: sending batch response: %v", results))
+				c.logger.Debug("jsonrpc2: sending batch response", "response", results)
 				c.stream.WriteObject(results)
 				return
 			}
-			c.logger.Tracef(fmt.Sprintf("jsonrpc2: sending response: %v", results[0]))
+			c.logger.Debug("jsonrpc2: sending response", "response", results[0])
 			c.stream.WriteObject(results[0])
 		}()
 	}

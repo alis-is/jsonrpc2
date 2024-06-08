@@ -54,9 +54,9 @@ func TestStreamcloseWithCause(t *testing.T) {
 	conn := getWritableSideOfPipe()
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(conn))
 	testLogger := test.NewLogger()
-	c.UseLogger(testLogger)
+	c.UseLogger(testLogger.Logger)
 	c.close(fmt.Errorf("testCause"))
-	assert.Contains(testLogger.Collected(), "stream closing, reason")
+	assert.Contains(testLogger.Collected(), "stream closing")
 	assert.Contains(testLogger.Collected(), "testCause")
 }
 
@@ -94,7 +94,7 @@ func TestStreamUseLogger(t *testing.T) {
 	assert.NotNil(c.logger)
 	oldLogger := c.logger
 	l := test.NewLogger()
-	c.UseLogger(l)
+	c.UseLogger(l.Logger)
 	assert.NotEqual(oldLogger, c.logger)
 }
 
@@ -114,7 +114,7 @@ func TestStreamRequestNonExistingMethod(t *testing.T) {
 	connA, connB := net.Pipe()
 	s := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connA))
 	testLogger := test.NewLogger()
-	s.UseLogger(testLogger)
+	s.UseLogger(testLogger.Logger)
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connB))
 
 	response, err := Request[string, string](context.Background(), c, "test", "test data")
@@ -130,7 +130,7 @@ func TestStreamRequest(t *testing.T) {
 	connA, connB := net.Pipe()
 	s := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connA))
 	testLogger := test.NewLogger()
-	s.UseLogger(testLogger)
+	s.UseLogger(testLogger.Logger)
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connB))
 	RegisterEndpointMethod(s, "test", func(ctx context.Context, data string) (string, *rpc.Error) {
 		return "hello " + data, nil
@@ -150,7 +150,7 @@ func TestStreamNotifyNonExistingMethod(t *testing.T) {
 	connA, connB := net.Pipe()
 	s := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connA))
 	testLogger := test.NewLogger()
-	s.UseLogger(testLogger)
+	s.UseLogger(testLogger.Logger)
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connB))
 
 	err := Notify(context.Background(), c, "test", "test data")
@@ -162,7 +162,7 @@ func TestStreamNotify(t *testing.T) {
 	connA, connB := net.Pipe()
 	s := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connA))
 	testLogger := test.NewLogger()
-	s.UseLogger(testLogger)
+	s.UseLogger(testLogger.Logger)
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connB))
 
 	signaled := make(chan bool, 1)
@@ -187,7 +187,7 @@ func TestStreamBatchNonExistingMethod(t *testing.T) {
 	connA, connB := net.Pipe()
 	s := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connA))
 	testLogger := test.NewLogger()
-	s.UseLogger(testLogger)
+	s.UseLogger(testLogger.Logger)
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connB))
 
 	requests := []RequestInfo[string]{
@@ -209,7 +209,7 @@ func TestStreamBatch(t *testing.T) {
 	connA, connB := net.Pipe()
 	s := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connA))
 	testLogger := test.NewLogger()
-	s.UseLogger(testLogger)
+	s.UseLogger(testLogger.Logger)
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connB))
 	RegisterEndpointMethod(s, "test", func(ctx context.Context, data string) (string, *rpc.Error) {
 		return "hello " + data, nil
@@ -238,7 +238,7 @@ func TestReadMessagesInvalidMessage(t *testing.T) {
 	connA, connB := net.Pipe()
 	s := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connA))
 	testLogger := test.NewLogger()
-	s.UseLogger(testLogger)
+	s.UseLogger(testLogger.Logger)
 	connB.Write([]byte("{ \"id\": 1, \"method\": \"test\", \"params\": \"hello world\", \"error\": {}, \"result\": \"hello world\" }"))
 	connB.Close()
 	time.Sleep(2 * time.Second) // wait for logs to be written
@@ -262,7 +262,7 @@ func TestReadMessagesContextClosed(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	s := NewStreamEndpoint(ctx, NewPlainObjectStream(connA))
 	testLogger := test.NewLogger()
-	s.UseLogger(testLogger)
+	s.UseLogger(testLogger.Logger)
 	cancelCtx()
 	connB.Write([]byte("hello world"))
 
@@ -275,7 +275,7 @@ func TestStreamRequestNotRegisteredAsPending(t *testing.T) {
 	s := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connA))
 	testLogger := test.NewLogger()
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connB))
-	c.UseLogger(testLogger)
+	c.UseLogger(testLogger.Logger)
 	RegisterEndpointMethod(s, "test", func(ctx context.Context, data string) (string, *rpc.Error) {
 		return "hello " + data, nil
 	})

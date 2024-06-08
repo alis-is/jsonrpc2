@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -18,7 +19,7 @@ type HttpClientEndpoint struct {
 	pending      map[interface{}]chan rpc.Message
 
 	url    string
-	logger Logger
+	logger *slog.Logger
 }
 
 func NewHttpClientEndpoint(baseUrl string, client *http.Client) *HttpClientEndpoint {
@@ -31,13 +32,13 @@ func NewHttpClientEndpoint(baseUrl string, client *http.Client) *HttpClientEndpo
 		url:          baseUrl,
 		pendingMutex: sync.Mutex{},
 		pending:      make(map[interface{}]chan rpc.Message, 1),
-		logger:       &DefaultLogger{},
+		logger:       slog.Default(),
 	}
 }
 
-func (c *HttpClientEndpoint) UseLogger(logger Logger) {
+func (c *HttpClientEndpoint) UseLogger(logger *slog.Logger) {
 	if logger == nil {
-		c.logger.Tracef("ignored nil logger")
+		c.logger.Debug("ignored nil logger")
 		return
 	}
 	c.logger = logger
@@ -75,7 +76,7 @@ func (c *HttpClientEndpoint) WriteObject(object interface{}) error {
 	if err != nil {
 		return err
 	}
-	c.logger.Tracef("sending request to %s: %s\n", c.url, string(requestBody))
+	c.logger.Debug("sending request", "to", c.url, "request", string(requestBody))
 	req.Header.Add("Content-Type", "application/json")
 
 	response, err := c.Do(req)
@@ -98,7 +99,7 @@ func (c *HttpClientEndpoint) WriteObject(object interface{}) error {
 
 	var rpcObj rpc.Object
 	err = json.Unmarshal(body, &rpcObj)
-	c.logger.Tracef("jsonrpc2: received message: %s\n", string(body))
+	c.logger.Debug("jsonrpc2: received message", "message", string(body))
 	if err != nil {
 		return err
 	}
@@ -116,7 +117,7 @@ func (c *HttpClientEndpoint) WriteObject(object interface{}) error {
 			// this is just shim to allow make common methods callable on http client
 			pendingChannel, ok := c.pending[rpcMsg.Id]
 			if !ok {
-				c.logger.Tracef("jsonrpc2: ignoring response #%s with no corresponding request\n", rpcMsg.Id)
+				c.logger.Debug("jsonrpc2: ignoring response with no corresponding request", "response_id", rpcMsg.Id)
 				continue
 			}
 			pendingChannel <- rpcMsg

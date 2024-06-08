@@ -26,7 +26,7 @@ func TestHttpClientUseLogger(t *testing.T) {
 	assert.NotNil(c.logger)
 	oldLogger := c.logger
 	l := test.NewLogger()
-	c.UseLogger(l)
+	c.UseLogger(l.Logger)
 	assert.NotEqual(oldLogger, c.logger)
 }
 
@@ -46,7 +46,7 @@ func TestServerMuxUseLogger(t *testing.T) {
 	assert.NotNil(c.logger)
 	oldLogger := c.logger
 	l := test.NewLogger()
-	c.UseLogger(l)
+	c.UseLogger(l.Logger)
 	assert.NotEqual(oldLogger, c.logger)
 }
 
@@ -179,7 +179,7 @@ func TestSendServerResponse(t *testing.T) {
 	assert.NotNil(c1)
 	mux := NewServerMux()
 	testLogger := test.NewLogger()
-	mux.UseLogger(testLogger)
+	mux.UseLogger(testLogger.Logger)
 	s := createHttpServer(mux, 8083)
 	go s.ListenAndServe()
 	defer s.Close()
