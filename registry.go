@@ -1,4 +1,4 @@
-package main
+package jsonrpc2
 
 import (
 	"context"
