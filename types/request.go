@@ -1,4 +1,4 @@
-package rpc
+package types
 
 type Request[TParam ParamsType] struct {
 	MessageBase

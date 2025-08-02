@@ -1,4 +1,4 @@
-package endpoints
+package main
 
 import (
 	"encoding/json"
@@ -9,14 +9,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/alis-is/jsonrpc2/rpc"
+	"github.com/alis-is/jsonrpc2/types"
 )
 
 type HttpClientEndpoint struct {
 	*http.Client
 
 	pendingMutex sync.Mutex
-	pending      map[interface{}]chan rpc.Message
+	pending      map[interface{}]chan types.Message
 
 	url    string
 	logger *slog.Logger
@@ -31,7 +31,7 @@ func NewHttpClientEndpoint(baseUrl string, client *http.Client) *HttpClientEndpo
 		Client:       client,
 		url:          baseUrl,
 		pendingMutex: sync.Mutex{},
-		pending:      make(map[interface{}]chan rpc.Message, 1),
+		pending:      make(map[interface{}]chan types.Message, 1),
 		logger:       slog.Default(),
 	}
 }
@@ -52,8 +52,8 @@ func (c *HttpClientEndpoint) IsClosed() bool {
 	return false
 }
 
-func (c *HttpClientEndpoint) RegisterPendingRequest(requestID interface{}) <-chan rpc.Message {
-	responseChan := make(chan rpc.Message, 1)
+func (c *HttpClientEndpoint) RegisterPendingRequest(requestID interface{}) <-chan types.Message {
+	responseChan := make(chan types.Message, 1)
 	c.pendingMutex.Lock()
 	defer c.pendingMutex.Unlock()
 	c.pending[requestID] = responseChan
@@ -90,14 +90,14 @@ func (c *HttpClientEndpoint) WriteObject(object interface{}) error {
 	}
 
 	if len(body) == 0 {
-		return rpc.ErrEmptyResponse
+		return types.ErrEmptyResponse
 	}
 
 	if response.StatusCode != 200 {
 		return fmt.Errorf("jsonrpc2: http error: %s", string(body))
 	}
 
-	var rpcObj rpc.Object
+	var rpcObj types.Object
 	err = json.Unmarshal(body, &rpcObj)
 	c.logger.Debug("jsonrpc2: received message", "message", string(body))
 	if err != nil {
@@ -107,13 +107,13 @@ func (c *HttpClientEndpoint) WriteObject(object interface{}) error {
 	for _, rpcMsg := range messages {
 		kind, err := rpcMsg.GetKind()
 		switch kind {
-		case rpc.REQUEST_KIND:
+		case types.REQUEST_KIND:
 			return fmt.Errorf("jsonrpc2: request received on client endpoint")
-		case rpc.NOTIFICATION_KIND:
+		case types.NOTIFICATION_KIND:
 			return fmt.Errorf("jsonrpc2: notification received on client endpoint")
-		case rpc.SUCCESS_RESPONSE_KIND:
+		case types.SUCCESS_RESPONSE_KIND:
 			fallthrough
-		case rpc.ERROR_RESPONSE_KIND:
+		case types.ERROR_RESPONSE_KIND:
 			// this is just shim to allow make common methods callable on http client
 			pendingChannel, ok := c.pending[rpcMsg.Id]
 			if !ok {
@@ -121,7 +121,7 @@ func (c *HttpClientEndpoint) WriteObject(object interface{}) error {
 				continue
 			}
 			pendingChannel <- rpcMsg
-		case rpc.INVALID_KIND:
+		case types.INVALID_KIND:
 			return fmt.Errorf("jsonrpc2: invalid message received: %s", err.Error())
 		default:
 			return fmt.Errorf("jsonrpc2: unknown message kind received: %s", kind)

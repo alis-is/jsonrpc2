@@ -1,4 +1,4 @@
-package endpoints
+package main
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/alis-is/jsonrpc2/rpc"
+	"github.com/alis-is/jsonrpc2/types"
 )
 
 var (
@@ -22,7 +22,7 @@ type StreamEndpoint struct {
 
 	pendingMutex sync.Mutex
 	closed       bool
-	pending      map[interface{}]chan rpc.Message
+	pending      map[interface{}]chan types.Message
 
 	writeMutex sync.Mutex
 
@@ -36,7 +36,7 @@ type StreamEndpoint struct {
 func NewStreamEndpoint(ctx context.Context, stream ObjectStream) *StreamEndpoint {
 	c := &StreamEndpoint{
 		stream:         stream,
-		pending:        make(map[interface{}]chan rpc.Message, 1),
+		pending:        make(map[interface{}]chan types.Message, 1),
 		closeNotify:    make(chan struct{}),
 		methodRegistry: NewMethodRegistry(),
 		logger:         slog.Default(),
@@ -104,7 +104,7 @@ func (c *StreamEndpoint) readMessages(ctx context.Context) {
 			c.logger.Debug("jsonrpc2: context closed")
 			break
 		}
-		var rpcObj rpc.Object
+		var rpcObj types.Object
 		err = c.stream.ReadObject(&rpcObj)
 		if err != nil {
 			c.logger.Debug("jsonrpc2: error reading message", "error", err)
@@ -117,13 +117,13 @@ func (c *StreamEndpoint) readMessages(ctx context.Context) {
 			for _, rpcMsg := range messages {
 				kind, err := rpcMsg.GetKind()
 				switch kind {
-				case rpc.REQUEST_KIND:
+				case types.REQUEST_KIND:
 					results = append(results, ProcessRpcRequest(ctx, c.methodRegistry, &rpcMsg))
-				case rpc.NOTIFICATION_KIND:
+				case types.NOTIFICATION_KIND:
 					_ = ProcessRpcRequest(ctx, c.methodRegistry, &rpcMsg)
-				case rpc.SUCCESS_RESPONSE_KIND:
+				case types.SUCCESS_RESPONSE_KIND:
 					fallthrough
-				case rpc.ERROR_RESPONSE_KIND:
+				case types.ERROR_RESPONSE_KIND:
 					pendingChannel, ok := c.pending[rpcMsg.Id]
 					if !ok {
 						c.logger.Debug("jsonrpc2: ignoring response with no corresponding request", "response_id", rpcMsg.Id)
@@ -160,8 +160,8 @@ func (c *StreamEndpoint) WriteObject(obj interface{}) error {
 	return c.stream.WriteObject(obj)
 }
 
-func (c *StreamEndpoint) RegisterPendingRequest(requestId interface{}) <-chan rpc.Message {
-	ch := make(chan rpc.Message, 1)
+func (c *StreamEndpoint) RegisterPendingRequest(requestId interface{}) <-chan types.Message {
+	ch := make(chan types.Message, 1)
 	c.pendingMutex.Lock()
 	c.pending[requestId] = ch
 	c.pendingMutex.Unlock()

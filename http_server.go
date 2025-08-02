@@ -1,4 +1,4 @@
-package endpoints
+package main
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/alis-is/jsonrpc2/rpc"
+	"github.com/alis-is/jsonrpc2/types"
 )
 
 func writeJsonResponse(w http.ResponseWriter, response []byte, statusCode int) {
@@ -60,7 +60,7 @@ func (mux *ServerMux) GetEndpoints() EndpointRegistry {
 	return mux.endpoints
 }
 
-func RegisterServerMuxEndpointMethod[TParam rpc.ParamsType, TResult rpc.ResultType](mux *ServerMux, endpoint string, method string, handler RpcMethod[TParam, TResult]) {
+func RegisterServerMuxEndpointMethod[TParam types.ParamsType, TResult types.ResultType](mux *ServerMux, endpoint string, method string, handler RpcMethod[TParam, TResult]) {
 	mux.RegisterEndpoint(endpoint)
 	RegisterMethod(mux.endpoints[endpoint], method, handler)
 }
@@ -85,14 +85,14 @@ func createHandler(mux *ServerMux, path string) func(w http.ResponseWriter, r *h
 		case "application/json":
 		default:
 			mux.logger.Debug("got request with unsupported content type", "content_type", contentType)
-			writeJsonResponse(w, rpc.NewInvalidRequestWithData(fmt.Sprintf("unsupported content type: %s", contentType)).ToResponseBytes(nil), http.StatusUnsupportedMediaType)
+			writeJsonResponse(w, types.NewInvalidRequestWithData(fmt.Sprintf("unsupported content type: %s", contentType)).ToResponseBytes(nil), http.StatusUnsupportedMediaType)
 			return
 		}
 
 		contentLength, err := strconv.Atoi(contentLengthHeader)
 		if contentLengthHeader == "" || err != nil {
 			mux.logger.Debug("got request with invalid content length", "content_length", contentLengthHeader)
-			writeJsonResponse(w, rpc.NewInvalidRequestWithData(fmt.Sprintf("invalid content length: %s", contentLengthHeader)).ToResponseBytes(nil), http.StatusUnsupportedMediaType)
+			writeJsonResponse(w, types.NewInvalidRequestWithData(fmt.Sprintf("invalid content length: %s", contentLengthHeader)).ToResponseBytes(nil), http.StatusUnsupportedMediaType)
 			return
 		}
 
@@ -101,15 +101,15 @@ func createHandler(mux *ServerMux, path string) func(w http.ResponseWriter, r *h
 		_, err = io.ReadFull(r.Body, msg)
 		if err != nil {
 			mux.logger.Debug("failed to read request body", "error", err)
-			writeJsonResponse(w, rpc.NewInvalidRequestWithData("invalid request body").ToResponseBytes(nil), http.StatusUnsupportedMediaType)
+			writeJsonResponse(w, types.NewInvalidRequestWithData("invalid request body").ToResponseBytes(nil), http.StatusUnsupportedMediaType)
 			return
 		}
 
-		var rpcObj rpc.Object
+		var rpcObj types.Object
 		err = json.Unmarshal(msg, &rpcObj)
 		if err != nil {
 			mux.logger.Debug("failed to parse request body", "error", err)
-			writeJsonResponse(w, rpc.NewParseErrorWithData(err.Error()).ToResponseBytes(nil), http.StatusUnsupportedMediaType)
+			writeJsonResponse(w, types.NewParseErrorWithData(err.Error()).ToResponseBytes(nil), http.StatusUnsupportedMediaType)
 			return
 		}
 
@@ -118,17 +118,17 @@ func createHandler(mux *ServerMux, path string) func(w http.ResponseWriter, r *h
 		for _, rpcMsg := range messages {
 			kind, err := rpcMsg.GetKind()
 			switch kind {
-			case rpc.REQUEST_KIND:
+			case types.REQUEST_KIND:
 				results = append(results, ProcessRpcRequest(context.Background(), reg, &rpcMsg))
-			case rpc.NOTIFICATION_KIND:
+			case types.NOTIFICATION_KIND:
 				_ = ProcessRpcRequest(context.Background(), reg, &rpcMsg)
-			case rpc.SUCCESS_RESPONSE_KIND:
+			case types.SUCCESS_RESPONSE_KIND:
 				fallthrough
-			case rpc.ERROR_RESPONSE_KIND:
+			case types.ERROR_RESPONSE_KIND:
 				mux.logger.Debug("ignoring response message", "message", rpcMsg)
 			default:
 				mux.logger.Debug("invalid message", "message", rpcMsg)
-				results = append(results, rpc.NewInvalidRequestWithData(err.Error()).ToResponse(rpcMsg.Id))
+				results = append(results, types.NewInvalidRequestWithData(err.Error()).ToResponse(rpcMsg.Id))
 			}
 		}
 
@@ -148,10 +148,10 @@ func createHandler(mux *ServerMux, path string) func(w http.ResponseWriter, r *h
 			responseBody, err := json.Marshal(nonEmptyResults[0])
 			if err != nil {
 				mux.logger.Debug("failed to marshal response", "error", err)
-				writeJsonResponse(w, rpc.NewInternalErrorWithData(fmt.Sprintf("failed to marshal response: %s", err.Error())).ToResponseBytes(nil), http.StatusInternalServerError)
+				writeJsonResponse(w, types.NewInternalErrorWithData(fmt.Sprintf("failed to marshal response: %s", err.Error())).ToResponseBytes(nil), http.StatusInternalServerError)
 				return
 			}
-			if _, isErrorResponse := nonEmptyResults[0].(*rpc.ErrorResponse); isErrorResponse {
+			if _, isErrorResponse := nonEmptyResults[0].(*types.ErrorResponse); isErrorResponse {
 				writeJsonResponse(w, responseBody, http.StatusBadRequest)
 			} else {
 				writeJsonResponse(w, responseBody, http.StatusOK)
@@ -162,7 +162,7 @@ func createHandler(mux *ServerMux, path string) func(w http.ResponseWriter, r *h
 		responseBody, err := json.Marshal(nonEmptyResults)
 		if err != nil {
 			mux.logger.Debug("failed to marshal response", "error", err)
-			writeJsonResponse(w, rpc.NewInternalErrorWithData(err.Error()).ToResponseBytes(nil), http.StatusInternalServerError)
+			writeJsonResponse(w, types.NewInternalErrorWithData(err.Error()).ToResponseBytes(nil), http.StatusInternalServerError)
 			return
 		}
 		// there is no information in the spec about how to handle multiple responses
