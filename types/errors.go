@@ -183,6 +183,6 @@ func (e *Error) ToHttpError() int {
 	}
 }
 
-func ResponseFromError[TId IdType](id TId, err *Error) *ErrorResponse {
+func ResponseFromError[TId Id](id TId, err *Error) *ErrorResponse {
 	return NewErrorResponse(id, err.toErrorObj())
 }

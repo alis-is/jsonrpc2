@@ -4,14 +4,14 @@ import (
 	"fmt"
 )
 
-type Response[TResult ResultType] struct {
+type Response[TResult Result] struct {
 	MessageBase
 	Id     interface{} `json:"id"`
 	Result TResult     `json:"result,omitempty"`
 	Error  *ErrorObj   `json:"error,omitempty"`
 }
 
-func NewResponseI[TResult ResultType](id interface{}, result TResult, err *ErrorObj) *Response[TResult] {
+func NewResponseI[TResult Result](id interface{}, result TResult, err *ErrorObj) *Response[TResult] {
 	return &Response[TResult]{
 		MessageBase{Version: jsonRpcVersion},
 		id,
@@ -20,7 +20,7 @@ func NewResponseI[TResult ResultType](id interface{}, result TResult, err *Error
 	}
 }
 
-func NewResponse[TResult ResultType](id interface{}, result TResult, err *ErrorObj) *Response[TResult] {
+func NewResponse[TResult Result](id interface{}, result TResult, err *ErrorObj) *Response[TResult] {
 	var zero TResult
 	return NewResponseI(id, zero, nil)
 }
@@ -45,9 +45,9 @@ func (r *Response[TResult]) Unwrap() (TResult, error) {
 	}
 }
 
-type SuccessResponse[TResult ResultType] Response[TResult]
+type SuccessResponse[TResult Result] Response[TResult]
 
-func NewSuccessResponseI[TResult ResultType](id interface{}, result TResult) *SuccessResponse[TResult] {
+func NewSuccessResponseI[TResult Result](id interface{}, result TResult) *SuccessResponse[TResult] {
 	return &SuccessResponse[TResult]{
 		MessageBase{Version: jsonRpcVersion},
 		id,
@@ -56,7 +56,7 @@ func NewSuccessResponseI[TResult ResultType](id interface{}, result TResult) *Su
 	}
 }
 
-func NewSuccessResponse[TId IdType, TResult ResultType](id TId, result TResult) *SuccessResponse[TResult] {
+func NewSuccessResponse[TId Id, TResult Result](id TId, result TResult) *SuccessResponse[TResult] {
 	return NewSuccessResponseI((interface{})(id), result)
 }
 
@@ -73,6 +73,6 @@ func NewErrorResponseI(id interface{}, err *ErrorObj) *ErrorResponse {
 	}
 }
 
-func NewErrorResponse[TId IdType](id TId, err *ErrorObj) *ErrorResponse {
+func NewErrorResponse[TId Id](id TId, err *ErrorObj) *ErrorResponse {
 	return NewErrorResponseI((interface{})(id), err)
 }

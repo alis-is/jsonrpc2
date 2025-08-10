@@ -8,7 +8,7 @@ import (
 )
 
 // register method to server endpoint
-func RegisterEndpointMethod[TParam types.ParamsType, TResult types.ResultType](c EndpointServer, method string, handler RpcMethod[TParam, TResult]) {
+func RegisterEndpointMethod[TParam types.Params, TResult types.Result](c EndpointServer, method string, handler RpcMethod[TParam, TResult]) {
 	if c == nil {
 		return
 	}
@@ -16,7 +16,7 @@ func RegisterEndpointMethod[TParam types.ParamsType, TResult types.ResultType](c
 }
 
 // request
-func Request[TParams types.ParamsType, TResult types.ResultType](ctx context.Context, c EndpointClient, method string, params TParams) (*types.Response[TResult], error) {
+func Request[TParams types.Params, TResult types.Result](ctx context.Context, c EndpointClient, method string, params TParams) (*types.Response[TResult], error) {
 	if c == nil {
 		return nil, ErrInvalidEndpoint
 	}
@@ -49,7 +49,7 @@ func Request[TParams types.ParamsType, TResult types.ResultType](ctx context.Con
 	}
 }
 
-func RequestTo[TParams types.ParamsType, TResult types.ResultType](ctx context.Context, c EndpointClient, method string, params TParams, result *types.Response[TResult]) error {
+func RequestTo[TParams types.Params, TResult types.Result](ctx context.Context, c EndpointClient, method string, params TParams, result *types.Response[TResult]) error {
 	response, err := Request[TParams, TResult](ctx, c, method, params)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func RequestTo[TParams types.ParamsType, TResult types.ResultType](ctx context.C
 }
 
 // notify
-func Notify[TParams types.ParamsType](ctx context.Context, c EndpointClient, method string, params TParams) error {
+func Notify[TParams types.Params](ctx context.Context, c EndpointClient, method string, params TParams) error {
 	if c == nil {
 		return ErrInvalidEndpoint
 	}
@@ -76,14 +76,14 @@ func Notify[TParams types.ParamsType](ctx context.Context, c EndpointClient, met
 	return nil
 }
 
-type RequestInfo[TParams types.ParamsType] struct {
+type RequestInfo[TParams types.Params] struct {
 	Method         string
 	Params         TParams
 	IsNotification bool
 }
 
 // Batch
-func Batch[TParams types.ParamsType, TResult types.ResultType](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams]) ([]*types.Response[TResult], error) {
+func Batch[TParams types.Params, TResult types.Result](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams]) ([]*types.Response[TResult], error) {
 	if c == nil {
 		return nil, ErrInvalidEndpoint
 	}
@@ -131,7 +131,7 @@ func Batch[TParams types.ParamsType, TResult types.ResultType](ctx context.Conte
 	return results, nil
 }
 
-func BatchTo[TParams types.ParamsType, TResult types.ResultType](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams], results []*types.Response[TResult]) error {
+func BatchTo[TParams types.Params, TResult types.Result](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams], results []*types.Response[TResult]) error {
 	r, err := Batch[TParams, TResult](ctx, c, requests)
 	if err != nil {
 		return err

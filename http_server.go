@@ -60,7 +60,7 @@ func (mux *ServerMux) GetEndpoints() EndpointRegistry {
 	return mux.endpoints
 }
 
-func RegisterServerMuxEndpointMethod[TParam types.ParamsType, TResult types.ResultType](mux *ServerMux, endpoint string, method string, handler RpcMethod[TParam, TResult]) {
+func RegisterServerMuxEndpointMethod[TParam types.Params, TResult types.Result](mux *ServerMux, endpoint string, method string, handler RpcMethod[TParam, TResult]) {
 	mux.RegisterEndpoint(endpoint)
 	RegisterMethod(mux.endpoints[endpoint], method, handler)
 }

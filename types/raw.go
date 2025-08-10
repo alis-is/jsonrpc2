@@ -18,14 +18,14 @@ const (
 	jsonRpcVersion = "2.0"
 )
 
-type IdType interface {
+type Id interface {
 	~string | ~int64 | ~int32 | ~int16 | ~int8 | ~int | ~uint64 | ~uint32 | ~uint16 | ~uint8 | ~uint
 }
-type ResultType interface{ any }
-type ParamsType interface {
+type Result interface{ any }
+type Params interface {
 	any | []any
 }
-type RawMessageType interface{ string | ~[]byte }
+type RawMessage interface{ string | ~[]byte }
 
 type MessageBase struct {
 	Version string `json:"jsonrpc"`
@@ -103,7 +103,7 @@ func (r *Message) GetKind() (MessageKind, error) {
 	return INVALID_KIND, ErrInternalInvalidMessageStructure
 }
 
-func MessageToRequest[TParam ParamsType](r *Message) *Request[TParam] {
+func MessageToRequest[TParam Params](r *Message) *Request[TParam] {
 	method := r.Method
 	var params TParam
 	if r.Params != nil {
@@ -121,7 +121,7 @@ func MessageToRequest[TParam ParamsType](r *Message) *Request[TParam] {
 	}
 }
 
-func MessageToSuccessResponse[TResult ResultType](rpc *Message) (*SuccessResponse[TResult], error) {
+func MessageToSuccessResponse[TResult Result](rpc *Message) (*SuccessResponse[TResult], error) {
 	if !rpc.IsSuccessResponse() {
 		return nil, errors.New("invalid rpc message type - not a success response")
 	}
@@ -154,7 +154,7 @@ func MessageToErrorResponse(rpc *Message) (*ErrorResponse, error) {
 	}, nil
 }
 
-func MessageToResponse[TResult ResultType](rpc *Message) (*Response[TResult], error) {
+func MessageToResponse[TResult Result](rpc *Message) (*Response[TResult], error) {
 	kind, err := rpc.GetKind()
 	if err != nil {
 		return nil, err

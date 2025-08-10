@@ -1,13 +1,13 @@
 package types
 
-type Request[TParam ParamsType] struct {
+type Request[TParam Params] struct {
 	MessageBase
 	Id     interface{} `json:"id,omitempty"`
 	Method string      `json:"method,omitempty"`
 	Params TParam      `json:"params,omitempty"`
 }
 
-func NewRequest[TId IdType, TParam ParamsType](id TId, method string, params TParam) (req *Request[TParam]) {
+func NewRequest[TId Id, TParam Params](id TId, method string, params TParam) (req *Request[TParam]) {
 	return &Request[TParam]{
 		MessageBase: MessageBase{Version: jsonRpcVersion},
 		Id:          (interface{})(id),
@@ -16,7 +16,7 @@ func NewRequest[TId IdType, TParam ParamsType](id TId, method string, params TPa
 	}
 }
 
-func NewNotification[TParam ParamsType](method string, params TParam) (req *Request[TParam]) {
+func NewNotification[TParam Params](method string, params TParam) (req *Request[TParam]) {
 	return &Request[TParam]{
 		MessageBase: MessageBase{
 			Version: jsonRpcVersion,

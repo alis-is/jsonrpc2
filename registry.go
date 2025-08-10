@@ -6,7 +6,7 @@ import (
 	types "github.com/alis-is/jsonrpc2/types"
 )
 
-type RpcMethod[TParam types.ParamsType, TResult types.ResultType] func(ctx context.Context, p TParam) (TResult, *types.Error)
+type RpcMethod[TParam types.Params, TResult types.Result] func(ctx context.Context, p TParam) (TResult, *types.Error)
 type RpcHandler func(ctx context.Context, rpcMessage *types.Message) interface{}
 type RpcMethodRegistry map[string]RpcHandler
 
@@ -36,7 +36,7 @@ func ProcessRpcRequest(ctx context.Context, reg RpcMethodRegistry, rpcMsg *types
 	return handler(ctx, rpcMsg)
 }
 
-func RegisterMethod[TParam types.ParamsType, TResult types.ResultType](reg RpcMethodRegistry, method string, handler RpcMethod[TParam, TResult]) {
+func RegisterMethod[TParam types.Params, TResult types.Result](reg RpcMethodRegistry, method string, handler RpcMethod[TParam, TResult]) {
 	reg[method] = func(ctx context.Context, rpcMsg *types.Message) interface{} {
 		request := types.MessageToRequest[TParam](rpcMsg)
 		result, jsonRpcErr := handler(ctx, request.Params)
