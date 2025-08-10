@@ -4,15 +4,15 @@ import (
 	"fmt"
 )
 
-type response[TResult Result] struct {
+type Response[TResult Result] struct {
 	messageBase
 	Id     interface{} `json:"id"`
 	Result TResult     `json:"result,omitempty"`
 	Error  *ErrorObj   `json:"error,omitempty"`
 }
 
-func NewResponseI[TResult Result](id interface{}, result TResult, err *ErrorObj) *response[TResult] {
-	return &response[TResult]{
+func NewResponseI[TResult Result](id interface{}, result TResult, err *ErrorObj) *Response[TResult] {
+	return &Response[TResult]{
 		messageBase{Version: jsonRpcVersion},
 		id,
 		result,
@@ -20,20 +20,20 @@ func NewResponseI[TResult Result](id interface{}, result TResult, err *ErrorObj)
 	}
 }
 
-func NewResponse[TResult Result](id interface{}, result TResult, err *ErrorObj) *response[TResult] {
+func NewResponse[TResult Result](id interface{}, result TResult, err *ErrorObj) *Response[TResult] {
 	var zero TResult
 	return NewResponseI(id, zero, nil)
 }
 
-func (r *response[TResult]) IsSuccess() bool {
+func (r *Response[TResult]) IsSuccess() bool {
 	return r.Error == nil
 }
 
-func (r *response[TResult]) IsError() bool {
+func (r *Response[TResult]) IsError() bool {
 	return r.Error != nil
 }
 
-func (r *response[TResult]) Unwrap() (TResult, error) {
+func (r *Response[TResult]) Unwrap() (TResult, error) {
 	var zero TResult
 	if r.IsSuccess() {
 		return r.Result, nil
@@ -45,7 +45,7 @@ func (r *response[TResult]) Unwrap() (TResult, error) {
 	}
 }
 
-type successResponse[TResult Result] response[TResult]
+type successResponse[TResult Result] Response[TResult]
 
 func NewSuccessResponseI[TResult Result](id interface{}, result TResult) *successResponse[TResult] {
 	return &successResponse[TResult]{
@@ -60,7 +60,7 @@ func NewSuccessResponse[TId Id, TResult Result](id TId, result TResult) *success
 	return NewSuccessResponseI((interface{})(id), result)
 }
 
-type errorResponse response[interface{}]
+type errorResponse Response[interface{}]
 
 func NewErrorResponseI(id interface{}, err *ErrorObj) *errorResponse {
 	return &errorResponse{

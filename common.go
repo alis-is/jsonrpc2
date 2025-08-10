@@ -15,7 +15,7 @@ func RegisterEndpointMethod[TParam Params, TResult Result](c EndpointServer, met
 }
 
 // request
-func Request[TParams Params, TResult Result](ctx context.Context, c EndpointClient, method string, params TParams) (*response[TResult], error) {
+func Request[TParams Params, TResult Result](ctx context.Context, c EndpointClient, method string, params TParams) (*Response[TResult], error) {
 	if c == nil {
 		return nil, ErrInvalidEndpoint
 	}
@@ -48,7 +48,7 @@ func Request[TParams Params, TResult Result](ctx context.Context, c EndpointClie
 	}
 }
 
-func RequestTo[TParams Params, TResult Result](ctx context.Context, c EndpointClient, method string, params TParams, result *response[TResult]) error {
+func RequestTo[TParams Params, TResult Result](ctx context.Context, c EndpointClient, method string, params TParams, result *Response[TResult]) error {
 	response, err := Request[TParams, TResult](ctx, c, method, params)
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ type RequestInfo[TParams Params] struct {
 }
 
 // Batch
-func Batch[TParams Params, TResult Result](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams]) ([]*response[TResult], error) {
+func Batch[TParams Params, TResult Result](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams]) ([]*Response[TResult], error) {
 	if c == nil {
 		return nil, ErrInvalidEndpoint
 	}
@@ -110,7 +110,7 @@ func Batch[TParams Params, TResult Result](ctx context.Context, c EndpointClient
 	if err := c.WriteObject(rpcRequests); err != nil {
 		return nil, err
 	}
-	results := make([]*response[TResult], 0, len(requests))
+	results := make([]*Response[TResult], 0, len(requests))
 	for _, ch := range resultChannels {
 		select {
 		case <-ctx.Done():
@@ -130,7 +130,7 @@ func Batch[TParams Params, TResult Result](ctx context.Context, c EndpointClient
 	return results, nil
 }
 
-func BatchTo[TParams Params, TResult Result](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams], results []*response[TResult]) error {
+func BatchTo[TParams Params, TResult Result](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams], results []*Response[TResult]) error {
 	r, err := Batch[TParams, TResult](ctx, c, requests)
 	if err != nil {
 		return err

@@ -154,13 +154,13 @@ func MessageToErrorResponse(rpc *message) (*errorResponse, error) {
 	}, nil
 }
 
-func MessageToResponse[TResult Result](rpc *message) (*response[TResult], error) {
+func MessageToResponse[TResult Result](rpc *message) (*Response[TResult], error) {
 	kind, err := rpc.GetKind()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &response[TResult]{
+	response := &Response[TResult]{
 		messageBase: messageBase{Version: jsonRpcVersion},
 		Id:          rpc.Id,
 	}

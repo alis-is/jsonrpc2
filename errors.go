@@ -26,7 +26,7 @@ func (e *ErrorObj) ToErrorResponse(id interface{}) *errorResponse {
 	return NewErrorResponseI(id, e)
 }
 
-func (e *ErrorObj) ToResponse(id interface{}) *response[interface{}] {
+func (e *ErrorObj) ToResponse(id interface{}) *Response[interface{}] {
 	return NewResponseI[interface{}](id, nil, e)
 }
 
