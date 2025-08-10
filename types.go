@@ -25,7 +25,6 @@ type Result interface{ any }
 type Params interface {
 	any | []any
 }
-type rawMessage interface{ string | ~[]byte }
 
 type messageBase struct {
 	Version string `json:"jsonrpc"`
