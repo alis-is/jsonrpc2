@@ -1,4 +1,4 @@
-package types
+package jsonrpc2
 
 import (
 	"encoding/json"
@@ -25,14 +25,14 @@ type Result interface{ any }
 type Params interface {
 	any | []any
 }
-type RawMessage interface{ string | ~[]byte }
+type rawMessage interface{ string | ~[]byte }
 
-type MessageBase struct {
+type messageBase struct {
 	Version string `json:"jsonrpc"`
 }
 
-type Message struct {
-	MessageBase
+type message struct {
+	messageBase
 	Id     interface{}     `json:"id,omitempty"`
 	Method string          `json:"method,omitempty"`
 	Params json.RawMessage `json:"params,omitempty"`
@@ -40,19 +40,19 @@ type Message struct {
 	Error  *ErrorObj       `json:"error,omitempty"`
 }
 
-func (r *Message) IsRequest() bool {
+func (r *message) IsRequest() bool {
 	return r.Method != ""
 }
 
-func (r *Message) IsSuccessResponse() bool {
+func (r *message) IsSuccessResponse() bool {
 	return r.Result != nil
 }
 
-func (r *Message) IsErrorResponse() bool {
+func (r *message) IsErrorResponse() bool {
 	return r.Error != nil
 }
 
-func (r *Message) isNonDeterminableKind() bool {
+func (r *message) isNonDeterminableKind() bool {
 	matchedKinds := []bool{
 		r.IsRequest(),
 		r.IsSuccessResponse(),
@@ -67,7 +67,7 @@ func (r *Message) isNonDeterminableKind() bool {
 	return truthy != 1
 }
 
-func (r *Message) GetKind() (MessageKind, error) {
+func (r *message) GetKind() (MessageKind, error) {
 	if r.Version != jsonRpcVersion {
 		return INVALID_KIND, fmt.Errorf("invalid jsonrpc version: %s", r.Version)
 	}
@@ -103,7 +103,7 @@ func (r *Message) GetKind() (MessageKind, error) {
 	return INVALID_KIND, ErrInternalInvalidMessageStructure
 }
 
-func MessageToRequest[TParam Params](r *Message) *Request[TParam] {
+func MessageToRequest[TParam Params](r *message) *request[TParam] {
 	method := r.Method
 	var params TParam
 	if r.Params != nil {
@@ -113,15 +113,15 @@ func MessageToRequest[TParam Params](r *Message) *Request[TParam] {
 		}
 	}
 
-	return &Request[TParam]{
-		MessageBase: MessageBase{Version: jsonRpcVersion},
+	return &request[TParam]{
+		messageBase: messageBase{Version: jsonRpcVersion},
 		Id:          r.Id,
 		Method:      method,
 		Params:      params,
 	}
 }
 
-func MessageToSuccessResponse[TResult Result](rpc *Message) (*SuccessResponse[TResult], error) {
+func MessageToSuccessResponse[TResult Result](rpc *message) (*successResponse[TResult], error) {
 	if !rpc.IsSuccessResponse() {
 		return nil, errors.New("invalid rpc message type - not a success response")
 	}
@@ -133,35 +133,35 @@ func MessageToSuccessResponse[TResult Result](rpc *Message) (*SuccessResponse[TR
 		}
 	}
 
-	return &SuccessResponse[TResult]{
-		MessageBase{Version: jsonRpcVersion},
+	return &successResponse[TResult]{
+		messageBase{Version: jsonRpcVersion},
 		rpc.Id,
 		result,
 		nil,
 	}, nil
 }
 
-func MessageToErrorResponse(rpc *Message) (*ErrorResponse, error) {
+func MessageToErrorResponse(rpc *message) (*errorResponse, error) {
 	if !rpc.IsSuccessResponse() {
 		return nil, errors.New("invalid rpc message type - not a success response")
 	}
 
-	return &ErrorResponse{
-		MessageBase{Version: jsonRpcVersion},
+	return &errorResponse{
+		messageBase{Version: jsonRpcVersion},
 		rpc.Id,
 		nil,
 		rpc.Error,
 	}, nil
 }
 
-func MessageToResponse[TResult Result](rpc *Message) (*Response[TResult], error) {
+func MessageToResponse[TResult Result](rpc *message) (*response[TResult], error) {
 	kind, err := rpc.GetKind()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &Response[TResult]{
-		MessageBase: MessageBase{Version: jsonRpcVersion},
+	response := &response[TResult]{
+		messageBase: messageBase{Version: jsonRpcVersion},
 		Id:          rpc.Id,
 	}
 
@@ -184,7 +184,7 @@ func MessageToResponse[TResult Result](rpc *Message) (*Response[TResult], error)
 
 // Object is a wrapper for a single or batch of rpc messages
 type Object struct {
-	messages []Message
+	messages []message
 	isBatch  bool
 }
 
@@ -192,11 +192,11 @@ func (r *Object) IsBatch() bool {
 	return r.isBatch
 }
 
-func (r *Object) GetMessages() []Message {
+func (r *Object) GetMessages() []message {
 	return r.messages
 }
 
-func (r *Object) GetSingleMessage() *Message {
+func (r *Object) GetSingleMessage() *message {
 	if r.isBatch {
 		return nil
 	}
@@ -209,7 +209,7 @@ func (r *Object) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &r.messages)
 	}
 	r.isBatch = false
-	r.messages = make([]Message, 1)
+	r.messages = make([]message, 1)
 	return json.Unmarshal(data, &r.messages[0])
 }
 

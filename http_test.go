@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/alis-is/jsonrpc2/test"
-	"github.com/alis-is/jsonrpc2/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -66,7 +65,7 @@ func TestServerMuxGetMethods(t *testing.T) {
 	assert.Equal(0, len(c.GetMethods()))
 	c.RegisterEndpoint("/test")
 	assert.Equal(0, len(c.GetMethods()))
-	RegisterEndpointMethod(c, "test", func(ctx context.Context, name string) (string, *types.Error) {
+	RegisterEndpointMethod(c, "test", func(ctx context.Context, name string) (string, *Error) {
 		return "Hello " + name, nil
 	})
 	assert.Equal(1, len(c.GetMethods()))
@@ -81,10 +80,10 @@ func TestHttpRequest(t *testing.T) {
 
 	mux := NewServerMux()
 	s := createHttpServer(mux, 8080)
-	RegisterServerMuxEndpointMethod(mux, "/bye", "bye", func(ctx context.Context, name string) (string, *types.Error) {
+	RegisterServerMuxEndpointMethod(mux, "/bye", "bye", func(ctx context.Context, name string) (string, *Error) {
 		return "Bye " + name, nil
 	})
-	RegisterServerMuxEndpointMethod(mux, "/hello", "hello", func(ctx context.Context, name string) (string, *types.Error) {
+	RegisterServerMuxEndpointMethod(mux, "/hello", "hello", func(ctx context.Context, name string) (string, *Error) {
 		return "Hello " + name, nil
 	})
 	go s.ListenAndServe()
@@ -112,10 +111,10 @@ func TestHttpBatchRequest(t *testing.T) {
 
 	mux := NewServerMux()
 	s := createHttpServer(mux, 8081)
-	RegisterServerMuxEndpointMethod(mux, "/", "bye", func(ctx context.Context, name string) (string, *types.Error) {
+	RegisterServerMuxEndpointMethod(mux, "/", "bye", func(ctx context.Context, name string) (string, *Error) {
 		return "Bye " + name, nil
 	})
-	RegisterServerMuxEndpointMethod(mux, "/", "hello", func(ctx context.Context, name string) (string, *types.Error) {
+	RegisterServerMuxEndpointMethod(mux, "/", "hello", func(ctx context.Context, name string) (string, *Error) {
 		return "Hello " + name, nil
 	})
 	go s.ListenAndServe()
@@ -146,11 +145,11 @@ func TestHttpNotification(t *testing.T) {
 	s := createHttpServer(mux, 8082)
 	signaled := make(chan bool, 1)
 	signaled2 := make(chan bool, 1)
-	RegisterServerMuxEndpointMethod(mux, "/bye", "bye", func(ctx context.Context, name string) (string, *types.Error) {
+	RegisterServerMuxEndpointMethod(mux, "/bye", "bye", func(ctx context.Context, name string) (string, *Error) {
 		signaled <- true
 		return "Bye " + name, nil
 	})
-	RegisterServerMuxEndpointMethod(mux, "/hello", "hello", func(ctx context.Context, name string) (string, *types.Error) {
+	RegisterServerMuxEndpointMethod(mux, "/hello", "hello", func(ctx context.Context, name string) (string, *Error) {
 		signaled2 <- true
 		return "Hello " + name, nil
 	})
@@ -186,8 +185,8 @@ func TestSendServerResponse(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
-	c1.WriteObject(types.NewSuccessResponse("test", "test data"))
+	c1.WriteObject(NewSuccessResponse("test", "test data"))
 	assert.Contains(<-testLogger.LogChannel(), "ignoring response")
-	c1.WriteObject(types.NewUnknownError().ToResponse("test"))
+	c1.WriteObject(NewUnknownError().ToResponse("test"))
 	assert.Contains(<-testLogger.LogChannel(), "ignoring response")
 }

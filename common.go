@@ -3,12 +3,11 @@ package jsonrpc2
 import (
 	"context"
 
-	"github.com/alis-is/jsonrpc2/types"
 	"github.com/google/uuid"
 )
 
 // register method to server endpoint
-func RegisterEndpointMethod[TParam types.Params, TResult types.Result](c EndpointServer, method string, handler RpcMethod[TParam, TResult]) {
+func RegisterEndpointMethod[TParam Params, TResult Result](c EndpointServer, method string, handler RpcMethod[TParam, TResult]) {
 	if c == nil {
 		return
 	}
@@ -16,7 +15,7 @@ func RegisterEndpointMethod[TParam types.Params, TResult types.Result](c Endpoin
 }
 
 // request
-func Request[TParams types.Params, TResult types.Result](ctx context.Context, c EndpointClient, method string, params TParams) (*types.Response[TResult], error) {
+func Request[TParams Params, TResult Result](ctx context.Context, c EndpointClient, method string, params TParams) (*response[TResult], error) {
 	if c == nil {
 		return nil, ErrInvalidEndpoint
 	}
@@ -32,7 +31,7 @@ func Request[TParams types.Params, TResult types.Result](ctx context.Context, c 
 	ch := c.RegisterPendingRequest(requestId)
 	defer c.UnregisterPendingRequest(requestId)
 
-	request := types.NewRequest(requestId, method, params)
+	request := NewRequest(requestId, method, params)
 	if err := c.WriteObject(request); err != nil {
 		return nil, err
 	}
@@ -44,12 +43,12 @@ func Request[TParams types.Params, TResult types.Result](ctx context.Context, c 
 			return nil, ErrStreamClosed
 		}
 
-		response, err := types.MessageToResponse[TResult](&responseMsg)
+		response, err := MessageToResponse[TResult](&responseMsg)
 		return response, err
 	}
 }
 
-func RequestTo[TParams types.Params, TResult types.Result](ctx context.Context, c EndpointClient, method string, params TParams, result *types.Response[TResult]) error {
+func RequestTo[TParams Params, TResult Result](ctx context.Context, c EndpointClient, method string, params TParams, result *response[TResult]) error {
 	response, err := Request[TParams, TResult](ctx, c, method, params)
 	if err != nil {
 		return err
@@ -59,16 +58,16 @@ func RequestTo[TParams types.Params, TResult types.Result](ctx context.Context, 
 }
 
 // notify
-func Notify[TParams types.Params](ctx context.Context, c EndpointClient, method string, params TParams) error {
+func Notify[TParams Params](ctx context.Context, c EndpointClient, method string, params TParams) error {
 	if c == nil {
 		return ErrInvalidEndpoint
 	}
 	if c.IsClosed() {
 		return ErrStreamClosed
 	}
-	notification := types.NewNotification(method, params)
+	notification := NewNotification(method, params)
 	if err := c.WriteObject(notification); err != nil {
-		if err == types.ErrEmptyResponse { // we do not expect response here
+		if err == ErrEmptyResponse { // we do not expect response here
 			return nil
 		}
 		return err
@@ -76,19 +75,19 @@ func Notify[TParams types.Params](ctx context.Context, c EndpointClient, method 
 	return nil
 }
 
-type RequestInfo[TParams types.Params] struct {
+type RequestInfo[TParams Params] struct {
 	Method         string
 	Params         TParams
 	IsNotification bool
 }
 
 // Batch
-func Batch[TParams types.Params, TResult types.Result](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams]) ([]*types.Response[TResult], error) {
+func Batch[TParams Params, TResult Result](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams]) ([]*response[TResult], error) {
 	if c == nil {
 		return nil, ErrInvalidEndpoint
 	}
-	rpcRequests := make([]*types.Request[TParams], 0, len(requests))
-	resultChannels := make([]<-chan types.Message, 0, len(requests))
+	rpcRequests := make([]*request[TParams], 0, len(requests))
+	resultChannels := make([]<-chan message, 0, len(requests))
 	for _, request := range requests {
 		uuid, err := uuid.NewRandom()
 		if err != nil {
@@ -99,19 +98,19 @@ func Batch[TParams types.Params, TResult types.Result](ctx context.Context, c En
 			return nil, ErrStreamClosed
 		}
 		if request.IsNotification {
-			rpcRequests = append(rpcRequests, types.NewNotification(request.Method, request.Params))
+			rpcRequests = append(rpcRequests, NewNotification(request.Method, request.Params))
 			continue
 		}
 		resultChannels = append(resultChannels, c.RegisterPendingRequest(requestId))
 		defer c.UnregisterPendingRequest(requestId)
 
-		rpcRequests = append(rpcRequests, types.NewRequest(requestId, request.Method, request.Params))
+		rpcRequests = append(rpcRequests, NewRequest(requestId, request.Method, request.Params))
 	}
 
 	if err := c.WriteObject(rpcRequests); err != nil {
 		return nil, err
 	}
-	results := make([]*types.Response[TResult], 0, len(requests))
+	results := make([]*response[TResult], 0, len(requests))
 	for _, ch := range resultChannels {
 		select {
 		case <-ctx.Done():
@@ -121,7 +120,7 @@ func Batch[TParams types.Params, TResult types.Result](ctx context.Context, c En
 				return nil, ErrStreamClosed
 			}
 
-			response, err := types.MessageToResponse[TResult](&responseMsg)
+			response, err := MessageToResponse[TResult](&responseMsg)
 			if err != nil {
 				return nil, err
 			}
@@ -131,7 +130,7 @@ func Batch[TParams types.Params, TResult types.Result](ctx context.Context, c En
 	return results, nil
 }
 
-func BatchTo[TParams types.Params, TResult types.Result](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams], results []*types.Response[TResult]) error {
+func BatchTo[TParams Params, TResult Result](ctx context.Context, c EndpointClient, requests []RequestInfo[TParams], results []*response[TResult]) error {
 	r, err := Batch[TParams, TResult](ctx, c, requests)
 	if err != nil {
 		return err

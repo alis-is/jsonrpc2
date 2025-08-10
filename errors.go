@@ -1,4 +1,4 @@
-package types
+package jsonrpc2
 
 import (
 	"encoding/json"
@@ -22,11 +22,11 @@ type ErrorObj struct {
 	Data    *json.RawMessage `json:"data,omitempty"`
 }
 
-func (e *ErrorObj) ToErrorResponse(id interface{}) *ErrorResponse {
+func (e *ErrorObj) ToErrorResponse(id interface{}) *errorResponse {
 	return NewErrorResponseI(id, e)
 }
 
-func (e *ErrorObj) ToResponse(id interface{}) *Response[interface{}] {
+func (e *ErrorObj) ToResponse(id interface{}) *response[interface{}] {
 	return NewResponseI[interface{}](id, nil, e)
 }
 
@@ -156,7 +156,7 @@ func (e *Error) toErrorObj() *ErrorObj {
 	}
 }
 
-func (e *Error) ToResponse(id interface{}) *ErrorResponse {
+func (e *Error) ToResponse(id interface{}) *errorResponse {
 	return NewErrorResponseI(id, e.toErrorObj())
 }
 
@@ -183,6 +183,6 @@ func (e *Error) ToHttpError() int {
 	}
 }
 
-func ResponseFromError[TId Id](id TId, err *Error) *ErrorResponse {
+func ResponseFromError[TId Id](id TId, err *Error) *errorResponse {
 	return NewErrorResponse(id, err.toErrorObj())
 }

@@ -2,13 +2,11 @@ package jsonrpc2
 
 import (
 	"log/slog"
-
-	"github.com/alis-is/jsonrpc2/types"
 )
 
 type EndpointClient interface {
 	WriteObject(obj interface{}) error
-	RegisterPendingRequest(id interface{}) <-chan types.Message
+	RegisterPendingRequest(id interface{}) <-chan message
 	UnregisterPendingRequest(id interface{})
 	Close() error
 	IsClosed() bool

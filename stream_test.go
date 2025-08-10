@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/alis-is/jsonrpc2/test"
-	"github.com/alis-is/jsonrpc2/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -103,7 +102,7 @@ func TestStreamListMethods(t *testing.T) {
 	conn := getWritableSideOfPipe()
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(conn))
 	assert.Len(c.ListMethods(), 0)
-	RegisterEndpointMethod(c, "test", func(ctx context.Context, data string) (string, *types.Error) {
+	RegisterEndpointMethod(c, "test", func(ctx context.Context, data string) (string, *Error) {
 		return "hello " + data, nil
 	})
 	assert.Len(c.ListMethods(), 1)
@@ -132,7 +131,7 @@ func TestStreamRequest(t *testing.T) {
 	testLogger := test.NewLogger()
 	s.UseLogger(testLogger.Logger)
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connB))
-	RegisterEndpointMethod(s, "test", func(ctx context.Context, data string) (string, *types.Error) {
+	RegisterEndpointMethod(s, "test", func(ctx context.Context, data string) (string, *Error) {
 		return "hello " + data, nil
 	})
 
@@ -166,7 +165,7 @@ func TestStreamNotify(t *testing.T) {
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connB))
 
 	signaled := make(chan bool, 1)
-	RegisterEndpointMethod(s, "test", func(ctx context.Context, data string) (string, *types.Error) {
+	RegisterEndpointMethod(s, "test", func(ctx context.Context, data string) (string, *Error) {
 		if data == "world" {
 			signaled <- true
 		}
@@ -211,7 +210,7 @@ func TestStreamBatch(t *testing.T) {
 	testLogger := test.NewLogger()
 	s.UseLogger(testLogger.Logger)
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connB))
-	RegisterEndpointMethod(s, "test", func(ctx context.Context, data string) (string, *types.Error) {
+	RegisterEndpointMethod(s, "test", func(ctx context.Context, data string) (string, *Error) {
 		return "hello " + data, nil
 	})
 
@@ -276,11 +275,11 @@ func TestStreamRequestNotRegisteredAsPending(t *testing.T) {
 	testLogger := test.NewLogger()
 	c := NewStreamEndpoint(context.Background(), NewPlainObjectStream(connB))
 	c.UseLogger(testLogger.Logger)
-	RegisterEndpointMethod(s, "test", func(ctx context.Context, data string) (string, *types.Error) {
+	RegisterEndpointMethod(s, "test", func(ctx context.Context, data string) (string, *Error) {
 		return "hello " + data, nil
 	})
 
-	c.WriteObject(types.NewRequest("testId", "test", "world"))
+	c.WriteObject(NewRequest("testId", "test", "world"))
 	time.Sleep(2 * time.Second) // wait for logs to be written
 	var lastLog string
 	func() {
